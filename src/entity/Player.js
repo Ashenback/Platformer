@@ -23,12 +23,12 @@ export default class Player extends Entity {
 		);
 		this.label.y = -this.label.height;
 		this.label.x = -(this.label.width / 2);
-		this.acceleration = 10.0;
+		this.acceleration = 20.0;
 		this.deacceleration = 20.0;
 		this.airMovementModifier = 0.5;
 		this.vx = 0.0;
 		this.vy = 0.0;
-		this.maxVX = 40.0;
+		this.maxVX = 10.0;
 		this.hp = 0;
 		this.maxHp = 100;
 		this.inAir = false;
@@ -93,14 +93,14 @@ export default class Player extends Entity {
 
 	update(delta) {
 		if (this.left.isDown) {
-			this.vx = -this.acceleration;
+			this.vx -= (this.acceleration * (this.inAir ? 0.5 : 1.0)) * delta.deltaScale;
 		}
 		if (this.right.isDown) {
-			this.vx = this.acceleration;
+			this.vx += (this.acceleration * (this.inAir ? 0.5 : 1.0)) * delta.deltaScale;
 		}
 		this.vx = clamp(this.vx, -this.maxVX, this.maxVX);
 
-		if (!this.right.isDown && !this.left.isDown) {
+		if (!this.right.isDown && !this.left.isDown && !this.inAir) {
 			this.vx *= 1.0 - (this.deacceleration * delta.deltaScale);
 		}
 
@@ -137,10 +137,10 @@ export default class Player extends Entity {
 			hitTestRectangle(newBounds, sibling.bounds)
 		);
 		if (hit) {
-			const w = this.sprite.width * .75;
-			const wh = this.sprite.width * .125;
-			const h = this.sprite.height * .75;
-			const hh = this.sprite.height * 0.125;
+			const w = this.sprite.width * .80;
+			const wh = this.sprite.width * .10;
+			const h = this.sprite.height * .80;
+			const hh = this.sprite.height * 0.10;
 			const upDetector = new PIXI.Rectangle(newX + wh, newY - 2, w, 4);
 			const downDetector = new PIXI.Rectangle(newX + wh, newY + this.sprite.height + 2, w, 4);
 			const leftDetector = new PIXI.Rectangle(newX - 2, newY + hh, 4, h);
