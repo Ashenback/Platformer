@@ -1,0 +1,25 @@
+{
+  "name": "platformer",
+  "version": "0.0.1",
+  "description": "Platformer using pixi.js",
+  "main": "index.js",
+  "scripts": {
+    "build": "webpack",
+    "watch": "webpack -d --watch"
+  },
+  "keywords": [
+    "platformer",
+    "pixijs"
+  ],
+  "author": "Joakim Askenbäck",
+  "license": "ISC",
+  "dependencies": {
+    "babel-core": "^6.14.0",
+    "babel-loader": "^6.2.5",
+    "babel-preset-es2015": "^6.14.0",
+    "babel-preset-stage-0": "^6.5.0",
+    "babel-preset-stage-1": "^6.13.0",
+    "copy-webpack-plugin": "^3.0.1",
+    "webpack": "^1.13.2"
+  }
+}
