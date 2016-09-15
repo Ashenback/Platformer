@@ -8,7 +8,9 @@ export default class Play extends State {
 	constructor(engine) {
 		super('Play', engine);
 
-		this.physics = Matter.Engine.create();
+		this.physics = Matter.Engine.create({
+			positionIterations: 10
+		});
 		this.world = this.physics.world;
 		this.physicsGraphics = new PIXI.Graphics();
 		this.debug = false;
@@ -35,19 +37,30 @@ export default class Play extends State {
 		this.addChild(platform4);
 		Matter.World.add(this.world, platform4.body);
 
-		const floor = new Platform(config.width / 2, config.height - 10, config.width, 5);
-		this.addChild(floor);
-		Matter.World.add(this.world, floor.body);
+		const wallS = new Platform(config.width / 2, config.height - 5, config.width, 5);
+		this.addChild(wallS);
+		Matter.World.add(this.world, wallS.body);
+
+		const wallN = new Platform(config.width / 2, 5, config.width, 5);
+		this.addChild(wallN);
+		Matter.World.add(this.world, wallN.body);
+
+		const wallW = new Platform(5, config.height / 2, 5, config.height);
+		this.addChild(wallW);
+		Matter.World.add(this.world, wallW.body);
+
+		const wallE = new Platform(config.width - 5, config.height / 2, 5, config.height);
+		this.addChild(wallE);
+		Matter.World.add(this.world, wallE.body);
 
 		keyboard(keyCode.f1).press = () => this.toggleDebug();
 	}
 
 	renderPhysics() {
-		var bodies = Matter.Composite.allBodies(this.world);
 		this.physicsGraphics.clear();
-		this.physicsGraphics.lineStyle(1, 0xff0000, 1);
-		for (var i = 0; i < bodies.length; i += 1) {
-			var vertices = bodies[i].vertices;
+		Matter.Composite.allBodies(this.world).forEach(body => {
+			const vertices = body.vertices;
+			this.physicsGraphics.lineStyle(body.render.lineWidth, Matter.Common.colorToNumber(body.render.strokeStyle), 1);
 
 			this.physicsGraphics.moveTo(vertices[0].x, vertices[0].y);
 
@@ -56,7 +69,7 @@ export default class Play extends State {
 			}
 
 			this.physicsGraphics.lineTo(vertices[0].x, vertices[0].y);
-		}
+		});
 	}
 
 	toggleDebug() {

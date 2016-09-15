@@ -24,9 +24,10 @@ export default class Player extends Entity {
 		);
 		this.label.y = -this.label.height;
 		this.label.x = -(this.label.width / 2);
-		this.acceleration = 20.0;
+		this.acceleration = 0.005;
 		this.deacceleration = 20.0;
 		this.airMovementModifier = 0.5;
+		this.multiJumpThreshold = 0.2;
 		this.vx = 0.0;
 		this.vy = 0.0;
 		this.maxVX = 10.0;
@@ -37,23 +38,17 @@ export default class Player extends Entity {
 		this.x = 200;
 		this.y = 200;
 		this.body = Matter.Bodies.rectangle(this.x, this.y, this.sprite.width, this.sprite.height, {
-			inertia: Infinity
+			inertia: Infinity,
+			friction: 0,
+			frictionAir: 0,
+			mass: 10.0
 		});
-/*
-		this.bounds = new PIXI.Rectangle(this.x, this.y, this.sprite.width, this.sprite.height);
-		this.boundsSprite = new PIXI.Graphics();
-		this.boundsSprite.lineStyle(1, 0xFF0000, 1);
-		this.boundsSprite.beginFill();
-		this.boundsSprite.drawRect(0, 0, this.bounds.width, this.bounds.height);
-		this.boundsSprite.endFill();
-*/
 		this.left = keyboard(keyCode.left);
 		this.right = keyboard(keyCode.right);
 		keyboard(keyCode.space).press = () => this.jump();
 		keyboard(keyCode.enter).press = () => this.hurt(10);
 
 		this.setTag('player');
-//		this.addChild(this.boundsSprite);
 		this.addChild(this.sprite);
 		this.addChild(this.label);
 		this.revive();
@@ -82,8 +77,12 @@ export default class Player extends Entity {
 	}
 
 	jump() {
-		if (!this.isJumping && !this.inAir) {
-			this.vy = -10.0;
+		if (!this.isJumping) {
+			Matter.Body.applyForce(
+				this.body,
+				this.body.position,
+				Matter.Vector.create(0, -0.1)
+			);
 			this.isJumping = true;
 		}
 	}
@@ -97,12 +96,32 @@ export default class Player extends Entity {
 	}
 
 	update() {
+		if (this.left.isDown) {
+			Matter.Body.applyForce(
+				this.body,
+				this.body.position,
+				Matter.Vector.create(-this.acceleration, 0)
+			);
+		}
+		if (this.right.isDown) {
+			Matter.Body.applyForce(
+				this.body,
+				this.body.position,
+				Matter.Vector.create(this.acceleration, 0)
+			);
+		}
 
+		this.inAir = Math.abs(this.body.velocity.y) > 0.001;
+		this.isJumping = Math.abs(this.body.velocity.y) > this.multiJumpThreshold;
 	}
 
 	fixedUpdate() {
-		this.x = this.body.position.x;
-		this.y = this.body.position.y;
+		this.x = this.body.position.x - this.sprite.width / 2;
+		this.y = this.body.position.y - this.sprite.height / 2;
+		this.label.text = `${this.body.motion}, ${this.body.speed}`;
+		//this.label.style.fill = this.hurtColor;
+		//this.label.text = 'Player';
+		this.label.x = -(this.label.width / 2) + (this.sprite.width / 2);
 	}
 
 	update_(delta) {
