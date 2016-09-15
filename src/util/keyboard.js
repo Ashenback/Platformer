@@ -96,11 +96,27 @@ const add = 107;
 const sub = 109;
 const dec = 110;
 const div = 111;
+const f1 = 112;
+const f2 = 113;
+const f3 = 114;
+const f4 = 115;
+const f5 = 116;
+const f6 = 117;
+const f7 = 118;
+const f8 = 119;
+const f9 = 120;
+const f10 = 121;
+const f11 = 122;
+const f12 = 123;
+const f13 = 124;
+const f14 = 125;
+const f15 = 126;
 
 export {
 	esc, tab, enter, space, up, down, left, right,
 	a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
 	zero, one, two, three, four, five, six, seven, eight, nine,
 	numZero, numOne, numTwo, numThree, numFour, numFive, numSix, numSeven, numEight, numNine,
-	mul, add, sub, dec, div
+	mul, add, sub, dec, div,
+	f1, f2, f3, f4, f5, f6, f7, f8, f9, f10, f11, f12, f13, f14, f15
 };

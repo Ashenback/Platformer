@@ -1,6 +1,5 @@
 export default class Entity extends PIXI.Container {
 	tags = [];
-	bounds = new PIXI.Container();
 
 	hasTag(tag) {
 		return this.tags.includes(tag);
@@ -13,4 +12,5 @@ export default class Entity extends PIXI.Container {
 	}
 
 	update() {}
+	fixedUpdate() {}
 }

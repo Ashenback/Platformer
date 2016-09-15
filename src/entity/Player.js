@@ -15,7 +15,8 @@ export default class Player extends Entity {
 		this.label = new PIXI.Text(
 			'Player',
 			{
-				font: `12px ${config.font}`,
+				fontSize: `12px`,
+				fontFamily: config.font,
 				fill: 'white',
 				stroke: 0xffc0c0,
 				strokeThickness: 1
@@ -35,20 +36,24 @@ export default class Player extends Entity {
 		this.isJumping = false;
 		this.x = 200;
 		this.y = 200;
+		this.body = Matter.Bodies.rectangle(this.x, this.y, this.sprite.width, this.sprite.height, {
+			inertia: Infinity
+		});
+/*
 		this.bounds = new PIXI.Rectangle(this.x, this.y, this.sprite.width, this.sprite.height);
 		this.boundsSprite = new PIXI.Graphics();
 		this.boundsSprite.lineStyle(1, 0xFF0000, 1);
 		this.boundsSprite.beginFill();
 		this.boundsSprite.drawRect(0, 0, this.bounds.width, this.bounds.height);
 		this.boundsSprite.endFill();
-
+*/
 		this.left = keyboard(keyCode.left);
 		this.right = keyboard(keyCode.right);
 		keyboard(keyCode.space).press = () => this.jump();
 		keyboard(keyCode.enter).press = () => this.hurt(10);
 
 		this.setTag('player');
-		this.addChild(this.boundsSprite);
+//		this.addChild(this.boundsSprite);
 		this.addChild(this.sprite);
 		this.addChild(this.label);
 		this.revive();
@@ -91,7 +96,16 @@ export default class Player extends Entity {
 		this.hurtColor = ((r << 16) | (g << 8) | b);
 	}
 
-	update(delta) {
+	update() {
+
+	}
+
+	fixedUpdate() {
+		this.x = this.body.position.x;
+		this.y = this.body.position.y;
+	}
+
+	update_(delta) {
 		if (this.left.isDown) {
 			this.vx -= (this.acceleration * (this.inAir ? 0.5 : 1.0)) * delta.deltaScale;
 		}

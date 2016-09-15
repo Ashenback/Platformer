@@ -2,12 +2,15 @@ import keyboard, * as keyCode from 'util/keyboard';
 import engine from 'core/Engine';
 import Play from 'states/Play';
 import Pause from 'states/Pause';
+import 'css/styles.css';
 
 const node = document.createElement('div');
+node.id = 'root';
 node.style.position = 'absolute';
 node.style.top = '50%';
 node.style.left = '50%';
 node.style.transform = 'translate(-50%, -50%)';
+node.style.zIndex = '-1';
 node.appendChild(engine.renderer.view);
 document.body.appendChild(node);
 
@@ -38,7 +41,7 @@ function setup() {
 		engine.changeState(engine.state === play ? pause : play);
 	};
 
-	engine.changeState(play);
+	engine.changeState(pause);
 	gameLoop(0);
 }
 
