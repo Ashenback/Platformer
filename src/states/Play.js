@@ -8,12 +8,6 @@ import Platform from "entity/Platform";
 export default class Play extends State {
 	constructor(engine) {
 		super('Play', engine);
-		/*
-		this.physics = Matter.Engine.create({
-			positionIterations: 10
-		});
-		this.world = this.physics.world;
-		*/
 		this.debug = true;
 		this.physicsGraphics = new PIXI.Graphics();
 		this.addChild(this.physicsGraphics);
@@ -48,7 +42,7 @@ export default class Play extends State {
 		this.addChild(wallW);
 
 		const wallE = new Platform(config.width - 5, 0, 5, config.height);
-		//this.addChild(wallE);
+		this.addChild(wallE);
 
 		keyboard(keyCode.f1).press = () => this.toggleDebug();
 	}
@@ -74,11 +68,12 @@ export default class Play extends State {
 
 	update(delta) {
 		this.children.forEach(entity => entity.update && entity.update(delta));
-		//Matter.Engine.update(this.physics);
 		this.children.forEach(entity => entity.fixedUpdate && entity.fixedUpdate(delta));
 		if (this.focus) {
-			this.x = -this.focus.x + config.width / 2;
-			this.y = -this.focus.y + config.height / 2;
+			const diffX = (-this.focus.x + config.width / 2) - this.x;
+			const diffY = (-this.focus.y + config.height / 2) - this.y;
+			this.x += diffX * 0.2;
+			this.y += diffY * 0.2;
 		}
 		if (this.debug) {
 			this.renderPhysics();
@@ -86,10 +81,8 @@ export default class Play extends State {
 	}
 
 	stateMount() {
-		//Matter.Render.run(this.renderer);
 	}
 
 	stateUnmount() {
-		//Matter.Render.stop(this.renderer);
 	}
 }
