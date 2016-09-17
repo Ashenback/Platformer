@@ -12,13 +12,13 @@ export function hitTestRectangle(r1, r2) {
 	r2.halfHeight = r2.height / 2;
 
 	//Calculate the distance vector between the sprites
-	const vx = r1.centerX - r2.centerX;
-	const vy = r1.centerY - r2.centerY;
+	const dx = r1.centerX - r2.centerX;
+	const dy = r1.centerY - r2.centerY;
 
 	//Figure out the combined half-widths and half-heights
 	const combinedHalfWidths = r1.halfWidth + r2.halfWidth;
 	const combinedHalfHeights = r1.halfHeight + r2.halfHeight;
 
 	// Check collision
-	return Math.abs(vx) < combinedHalfWidths && Math.abs(vy) < combinedHalfHeights;
+	return Math.abs(dx) < combinedHalfWidths && Math.abs(dy) < combinedHalfHeights;
 }

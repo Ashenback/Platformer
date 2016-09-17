@@ -1,5 +1,6 @@
 export default class State extends PIXI.Container {
 	name;
+	focus;
 
 	constructor(name, engine) {
 		super();
@@ -11,6 +12,10 @@ export default class State extends PIXI.Container {
 		return this.children.filter(entity => entity.hasTag && entity.hasTag(tag));
 	}
 
+
+	setFocus(entity) {
+		this.focus = entity;
+	}
 	stateMount() {}
 	shouldStateUpdate() { return true; }
 	update(timestamp) { this.children.forEach(entity => entity.update && entity.update(timestamp)); }

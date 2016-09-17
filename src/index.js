@@ -41,7 +41,7 @@ function setup() {
 		engine.changeState(engine.state === play ? pause : play);
 	};
 
-	engine.changeState(pause);
+	engine.changeState(play);
 	gameLoop(0);
 }
 
