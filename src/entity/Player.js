@@ -12,6 +12,10 @@ export default class Player extends Entity {
 			PIXI.loader.resources.player_land_flipped.texture
 		);
 
+		this.leftSprite = new PIXI.Sprite(
+			PIXI.loader.resources.player_land.texture
+		);
+
 		this.label = new PIXI.Text(
 			'Player',
 			{
@@ -45,24 +49,24 @@ export default class Player extends Entity {
 		keyboard(keyCode.space).press = () => this.jump();
 		keyboard(keyCode.enter).press = () => this.hurt(10);
 
-		this.setTag('player');
-		this.addChild(this.sprite);
-		this.addChild(this.label);
-		this.revive();
-
 		// debug stuff
 		this.hitGraphics = new PIXI.Graphics();
 		this.addChild(this.hitGraphics);
-		this.hitLeft = new PIXI.Rectangle(this.x, this.y + this.height / 2 - 10, 20, 20);
-		this.hitRight = new PIXI.Rectangle(this.x + this.bounds.width - 20, this.y + this.height / 2 - 10, 20, 20);
-		this.hitUp = new PIXI.Rectangle(this.x + this.bounds.width / 2 - 10, this.y, 20, 20);
-		this.hitDown = new PIXI.Rectangle(this.x + this.bounds.width / 2 - 10, this.y + this.bounds.height - 20, 20, 20);
+		this.hitLeft = new PIXI.Rectangle(0, 0 , 20, 30);
+		this.hitRight = new PIXI.Rectangle(0, 0, 20, 30);
+		this.hitUp = new PIXI.Rectangle(0, 0, 20, 20);
+		this.hitDown = new PIXI.Rectangle(0, 0 , 20, 20);
 		this.hitBoxes = [
 			this.hitLeft,
 			this.hitRight,
 			this.hitUp,
 			this.hitDown
-		]
+		];
+
+		this.setTag('player');
+		this.addChild(this.sprite);
+		this.addChild(this.label);
+		this.revive();
 	}
 
 	revive() {
@@ -103,8 +107,6 @@ export default class Player extends Entity {
 	}
 
 	update(delta) {
-		let nextX = this.x;
-		let nextY = this.y;
 		if (this.left.isDown) {
 			if (this.vx > 0) {
 				this.vx = -this.acceleration * delta.deltaScale;
@@ -127,14 +129,6 @@ export default class Player extends Entity {
 		this.vx = clamp(this.vx, -this.maxVX, this.maxVX);
 		this.vy += this.gravity * delta.deltaScale;
 
-		nextX += this.vx;
-		nextY += this.vy;
-/*
-		this.hitLeft.visible = false;
-		this.hitRight.visible = false;
-		this.hitUp.visible = false;
-		this.hitDown.visible = false;
-*/
 		this.checkCollisionAndMove();
 
 		this.inAir = Math.abs(this.vy) > 0.01;
@@ -149,24 +143,30 @@ export default class Player extends Entity {
 	updateHitBoxes(vector){
 		this.hitLeft.x = vector.x;
 		this.hitLeft.y = vector.y + (this.bounds.height - this.hitLeft.height) / 2;
-		this.hitRight.x = vector.x + this.bounds.width - 20;
+		this.hitRight.x = vector.x + this.bounds.width - this.hitLeft.width;
 		this.hitRight.y = vector.y + (this.bounds.height - this.hitLeft.height) / 2;
-		this.hitUp.x = vector.x + this.bounds.width / 2 - 10;
+		this.hitUp.x = vector.x + (this.bounds.width - this.hitUp.width) / 2;
 		this.hitUp.y = vector.y;
-		this.hitDown.x = vector.x + this.bounds.width / 2 - 10;
-		this.hitDown.y = vector.y + this.bounds.height - 20;
+		this.hitDown.x = vector.x + (this.bounds.width - this.hitDown.width) / 2;
+		this.hitDown.y = vector.y + this.bounds.height - this.hitDown.height;
 	}
 
 	fixedUpdate() {
 		this.hitGraphics.clear();
-		this.hitGraphics.lineStyle(2, 0x00ff00, 1);
-		this.hitBoxes.forEach(hitBox => {
-			this.hitGraphics.moveTo(hitBox.x - this.bounds.x, hitBox.y - this.bounds.y);
-			this.hitGraphics.lineTo(hitBox.x + hitBox.width - this.bounds.x, hitBox.y - this.bounds.y);
-			this.hitGraphics.lineTo(hitBox.x + hitBox.width - this.bounds.x, hitBox.y + hitBox.height - this.bounds.y);
-			this.hitGraphics.lineTo(hitBox.x - this.bounds.x, hitBox.y + hitBox.height - this.bounds.y);
-			this.hitGraphics.lineTo(hitBox.x - this.bounds.x, hitBox.y - this.bounds.y);
-		});
+		this.renderHitBoxes();
+	}
+
+	renderHitBoxes() {
+		if (engine.state.debug) {
+			this.hitGraphics.lineStyle(2, 0x00ff00, 1);
+			this.hitBoxes.forEach(hitBox => {
+				this.hitGraphics.moveTo(hitBox.x - this.bounds.x, hitBox.y - this.bounds.y);
+				this.hitGraphics.lineTo(hitBox.x + hitBox.width - this.bounds.x, hitBox.y - this.bounds.y);
+				this.hitGraphics.lineTo(hitBox.x + hitBox.width - this.bounds.x, hitBox.y + hitBox.height - this.bounds.y);
+				this.hitGraphics.lineTo(hitBox.x - this.bounds.x, hitBox.y + hitBox.height - this.bounds.y);
+				this.hitGraphics.lineTo(hitBox.x - this.bounds.x, hitBox.y - this.bounds.y);
+			});
+		}
 	}
 
 	checkCollisionAndMove() {
