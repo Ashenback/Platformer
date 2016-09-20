@@ -1,4 +1,5 @@
 import keyboard, * as keyCode from 'util/keyboard';
+import config from 'util/config';
 import engine from 'core/Engine';
 import Play from 'states/Play';
 import Pause from 'states/Pause';
@@ -9,7 +10,7 @@ node.id = 'root';
 node.style.position = 'absolute';
 node.style.top = '50%';
 node.style.left = '50%';
-node.style.transform = 'translate(-50%, -50%)';
+node.style.transform = `translate(-50%, -50%) scale(${config.scale})`;
 node.style.zIndex = '-1';
 node.appendChild(engine.renderer.view);
 document.body.appendChild(node);
@@ -18,7 +19,6 @@ function loadProgressHandler(loader, resource) {
 	console.log('loading: ', resource.name);
 	console.log('progress: ', loader.progress + '%');
 }
-
 PIXI.loader
 	.add('player_air', 'assets/player_air.png')
 	.add('player_air_flipped', 'assets/player_air_flipped.png')
@@ -31,9 +31,16 @@ PIXI.loader
 	.add('player_run', 'assets/player_run.png')
 	.add('player_run_flipped', 'assets/player_run_flipped.png')
 	.on('progress', loadProgressHandler)
+	.after((resource, next) => {
+		resource.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+		next();
+	})
 	.load(setup);
 
-function setup() {
+function setup(loader, resources) {
+	Object.keys(resources).forEach(key => {
+		resources[key].texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
+	});
 	const play = new Play(engine);
 	const pause = new Pause(engine);
 

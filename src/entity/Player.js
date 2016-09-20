@@ -2,19 +2,128 @@ import keyboard, * as keyCode from 'util/keyboard';
 import config from 'util/config';
 import { clamp } from 'util/math';
 import Entity from './Entity';
+import Animation from '../core/Animation';
 import engine from 'core/Engine';
 import { hitTestRectangle } from 'util/collision';
 
 export default class Player extends Entity {
 	constructor() {
 		super();
-		this.sprite = new PIXI.Sprite(
-			PIXI.loader.resources.player_land_flipped.texture
+		this.landAnimation = new Animation(
+			PIXI.loader.resources.player_land.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45)
+			],
+			{
+				type: 'linear'
+			}
 		);
 
-		this.leftSprite = new PIXI.Sprite(
-			PIXI.loader.resources.player_land.texture
+		this.runAnimation = new Animation(
+			PIXI.loader.resources.player_run.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45),
+				new PIXI.Rectangle(36, 0, 36, 45),
+				new PIXI.Rectangle(72, 0, 36, 45),
+				new PIXI.Rectangle(108, 0, 36, 45),
+				new PIXI.Rectangle(144, 0, 36, 45),
+				new PIXI.Rectangle(180, 0, 36, 45),
+				new PIXI.Rectangle(216, 0, 36, 45),
+				new PIXI.Rectangle(252, 0, 36, 45),
+				new PIXI.Rectangle(288, 0, 36, 45),
+				new PIXI.Rectangle(324, 0, 36, 45)
+			]
 		);
+
+		this.runAnimationFlipped = new Animation(
+			PIXI.loader.resources.player_run_flipped.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45),
+				new PIXI.Rectangle(36, 0, 36, 45),
+				new PIXI.Rectangle(72, 0, 36, 45),
+				new PIXI.Rectangle(108, 0, 36, 45),
+				new PIXI.Rectangle(144, 0, 36, 45),
+				new PIXI.Rectangle(180, 0, 36, 45),
+				new PIXI.Rectangle(216, 0, 36, 45),
+				new PIXI.Rectangle(252, 0, 36, 45),
+				new PIXI.Rectangle(288, 0, 36, 45),
+				new PIXI.Rectangle(324, 0, 36, 45)
+			]
+		);
+
+		this.jumpAnimation = new Animation(
+			PIXI.loader.resources.player_jump.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45),
+				new PIXI.Rectangle(36, 0, 36, 45)
+			],
+			{
+				type: 'linear'
+			}
+		);
+
+		this.jumpAnimationFlipped = new Animation(
+			PIXI.loader.resources.player_jump_flipped.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45),
+				new PIXI.Rectangle(36, 0, 36, 45)
+			],
+			{
+				type: 'linear'
+			}
+		);
+
+		this.airAnimation = new Animation(
+			PIXI.loader.resources.player_air.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45)
+			],
+			{
+				type: 'linear'
+			}
+		);
+
+		this.airAnimationFlipped = new Animation(
+			PIXI.loader.resources.player_air_flipped.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45)
+			],
+			{
+				type: 'linear'
+			}
+		);
+
+		this.idleAnimation = new Animation(
+			PIXI.loader.resources.player_idle.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45),
+				new PIXI.Rectangle(36, 0, 36, 45),
+				new PIXI.Rectangle(72, 0, 36, 45),
+				new PIXI.Rectangle(108, 0, 36, 45),
+				new PIXI.Rectangle(144, 0, 36, 45),
+				new PIXI.Rectangle(180, 0, 36, 45)
+			],
+			{
+				fps: 8.0
+			}
+		);
+
+		this.idleAnimationFlipped = new Animation(
+			PIXI.loader.resources.player_idle_flipped.texture,
+			[
+				new PIXI.Rectangle(0, 0, 36, 45),
+				new PIXI.Rectangle(36, 0, 36, 45),
+				new PIXI.Rectangle(72, 0, 36, 45),
+				new PIXI.Rectangle(108, 0, 36, 45),
+				new PIXI.Rectangle(144, 0, 36, 45)
+			],
+			{
+				fps: 8.0
+			}
+		);
+
+		this.currentAnimation = this.idleAnimation;
+		this.sprite = new PIXI.Sprite(this.currentAnimation.texture);
 
 		this.label = new PIXI.Text(
 			'Player',
@@ -31,19 +140,21 @@ export default class Player extends Entity {
 		this.acceleration = 15.0;
 		this.jumpPower = 10.0;
 		this.gravity = 20.0;
-		this.deacceleration = 20.0;
-		this.airMovementModifier = 0.5;
-		this.multiJumpThreshold = 0.2;
 		this.vx = 0.0;
 		this.vy = 0.0;
+		this.dir = -1;
 		this.maxVX = 6.0;
 		this.hp = 0;
 		this.maxHp = 100;
 		this.inAir = false;
 		this.isJumping = false;
-		this.x = 200;
-		this.y = 200;
-		this.bounds = new PIXI.Rectangle(this.x, this.y, this.sprite.width, this.sprite.height);
+		this.jumpTime = 0.0;
+		this.airTime = 0.0;
+		this.x = 50;
+		this.y = -100;
+		this.bounds = new PIXI.Rectangle(this.x, this.y, 26, 40);
+		this.sprite.position.x = -5;
+		this.sprite.position.y = -5;
 		this.left = keyboard(keyCode.left);
 		this.right = keyboard(keyCode.right);
 		keyboard(keyCode.space).press = () => this.jump();
@@ -52,16 +163,17 @@ export default class Player extends Entity {
 		// debug stuff
 		this.hitGraphics = new PIXI.Graphics();
 		this.addChild(this.hitGraphics);
-		this.hitLeft = new PIXI.Rectangle(0, 0 , 20, 30);
-		this.hitRight = new PIXI.Rectangle(0, 0, 20, 30);
-		this.hitUp = new PIXI.Rectangle(0, 0, 20, 20);
-		this.hitDown = new PIXI.Rectangle(0, 0 , 20, 20);
+		this.hitLeft = new PIXI.Rectangle(0, 0 , 20, 25);
+		this.hitRight = new PIXI.Rectangle(0, 0, 20, 25);
+		this.hitUp = new PIXI.Rectangle(0, 0, 15, 20);
+		this.hitDown = new PIXI.Rectangle(0, 0 , 15, 20);
 		this.hitBoxes = [
 			this.hitLeft,
 			this.hitRight,
 			this.hitUp,
 			this.hitDown
 		];
+		// end of debug stuff
 
 		this.setTag('player');
 		this.addChild(this.sprite);
@@ -93,7 +205,7 @@ export default class Player extends Entity {
 
 	jump() {
 		if (!this.isJumping && !this.inAir) {
-			this.vy = -this.jumpPower;
+			this.vy -= this.jumpPower;
 			this.isJumping = true;
 		}
 	}
@@ -113,6 +225,7 @@ export default class Player extends Entity {
 			} else {
 				this.vx -= this.acceleration * delta.deltaScale;
 			}
+			this.dir = -1;
 		}
 		if (this.right.isDown) {
 			if (this.vx < 0) {
@@ -120,10 +233,14 @@ export default class Player extends Entity {
 			} else {
 				this.vx += this.acceleration * delta.deltaScale;
 			}
+			this.dir = 1;
 		}
 
 		if (!this.left.isDown && !this.right.isDown) {
 			this.vx *= .4;
+			if (Math.abs(this.vx) < 0.1) {
+				this.vx = 0.0;
+			}
 		}
 
 		this.vx = clamp(this.vx, -this.maxVX, this.maxVX);
@@ -151,9 +268,56 @@ export default class Player extends Entity {
 		this.hitDown.y = vector.y + this.bounds.height - this.hitDown.height;
 	}
 
-	fixedUpdate() {
+	changeAnimation(animation) {
+		if (this.currentAnimation !== animation) {
+			this.currentAnimation.stop();
+			this.currentAnimation = animation;
+			this.currentAnimation.play();
+			this.sprite.texture = this.currentAnimation.texture;
+		}
+	}
+
+	fixedUpdate(delta) {
 		this.hitGraphics.clear();
 		this.renderHitBoxes();
+
+		// update animation
+		if (this.isJumping) {
+			if (this.vy < 0) {
+				if (this.dir < 0) {
+					this.changeAnimation(this.airAnimation);
+				} else {
+					this.changeAnimation(this.airAnimationFlipped);
+				}
+			} else {
+				if (this.dir < 0) {
+					this.changeAnimation(this.jumpAnimation);
+				} else {
+					this.changeAnimation(this.jumpAnimationFlipped);
+				}
+			}
+		} else if (this.vy > 0) {
+			if (this.dir < 0) {
+				this.changeAnimation(this.airAnimation);
+			} else {
+				this.changeAnimation(this.airAnimationFlipped);
+			}
+		} else {
+			if (this.vx === 0) {
+				if (this.dir < 0) {
+					this.changeAnimation(this.idleAnimation);
+				} else {
+					this.changeAnimation(this.idleAnimationFlipped);
+				}
+			} else {
+				if (this.dir < 0) {
+					this.changeAnimation(this.runAnimation);
+				} else {
+					this.changeAnimation(this.runAnimationFlipped);
+				}
+			}
+		}
+		this.currentAnimation.update(delta);
 	}
 
 	renderHitBoxes() {
@@ -261,79 +425,5 @@ export default class Player extends Entity {
 		});
 		this.x = nextX;
 		this.y = nextY;
-	}
-
-	checkCollisionAndMove_() {
-		let nextX = this.x + this.vx;
-		let nextY = this.y + this.vy;
-		const hitRect = new PIXI.Rectangle(this.bounds.x, this.bounds.y, this.bounds.width, this.bounds.height);
-		engine.state.children.forEach(child => {
-			if (child && child.hasTag && child.hasTag('platform')) {
-				hitRect.x = nextX;
-				hitRect.y = nextY;
-				if (hitTestRectangle(hitRect, child.bounds)) {
-					hitRect.x = this.x;
-					hitRect.y = this.y;
-					const diffX = child.bounds.x - hitRect.x;
-					if (child.bounds.x > hitRect.x + hitRect.width - diffX ||
-						child.bounds.x + child.bounds.width < hitRect.x - diffX
-					) {
-						hitRect.x = nextX;
-						if (hitTestRectangle(hitRect, child.bounds)) {
-							const diff = (child.bounds.x + child.bounds.width / 2) - (hitRect.x + hitRect.width / 2);
-							if (diff < 0) {
-								hitRect.x = nextX = child.bounds.x + child.bounds.width;
-								//this.hitLeft.visible = true;
-							} else {
-								hitRect.x = nextX = child.bounds.x - hitRect.width;
-								//this.hitRight.visible = true;
-							}
-							this.vx = 0;
-						}
-					} else {
-						hitRect.y = nextY;
-						if (hitTestRectangle(hitRect, child.bounds)) {
-							const diff = (child.bounds.y + child.bounds.height / 2) - (hitRect.y + hitRect.height / 2);
-							if (diff < 0) {
-								hitRect.y = nextY = child.bounds.y + child.bounds.height;
-								//this.hitUp.visible = true;
-							} else {
-								hitRect.y = nextY = child.bounds.y - hitRect.height;
-								//this.hitDown.visible = true;
-								this.isJumping = false;
-								this.inAir = false;
-							}
-							this.vy = 0;
-						}
-					}
-				} else {
-					hitRect.x = nextX;
-					if (hitTestRectangle(hitRect, child.bounds)) {
-						const diff = child.bounds.x - hitRect.x;
-						if (diff < 0) {
-							hitRect.x = nextX = child.bounds.x + child.bounds.width;
-						} else {
-							hitRect.x = nextX = child.bounds.x - hitRect.width;
-						}
-						this.vx = 0;
-					}
-					hitRect.y = nextY;
-					if (hitTestRectangle(hitRect, child.bounds)) {
-						const diff = child.bounds.y - hitRect.y;
-						if (diff < 0) {
-							hitRect.y = nextY = child.bounds.y + child.bounds.height;
-						} else {
-							hitRect.y = nextY = child.bounds.y - hitRect.height;
-							this.isJumping = false;
-							this.inAir = false;
-						}
-						this.vy = 0;
-					}
-				}
-			}
-		});
-		this.x = nextX;
-		this.y = nextY;
-		this.updateHitBoxes({x: nextX, y: nextY});
 	}
 }

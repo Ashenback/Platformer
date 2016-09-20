@@ -10,6 +10,12 @@ export default class Platform extends Entity {
 		this.bounds = new PIXI.Rectangle(this.x, this.y, width, height);
 		this.setTag('platform');
 		this.moving = false;
+		this.gfx = new PIXI.Graphics();
+		this.gfx.beginFill(0xff7f00);
+		this.gfx.lineStyle(2, 0xff7f00, 1);
+		this.gfx.drawRect(0, 0, width, height);
+		this.gfx.endFill();
+		this.addChild(this.gfx);
 	}
 
 	setMoving(vector, interval = 1000) {
