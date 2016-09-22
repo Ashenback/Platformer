@@ -75,8 +75,6 @@ export default class Map1 extends PIXI.Container {
 						//console.log('add collision', object.name, collidable.bounds);
 						engine.state.collidables.push(collidable);
 					});
-				} else if (layer.name === 'items') {
-
 				} else if (layer.name === 'triggers') {
 					layer.objects.forEach(object => {
 						if (object.type === 'spawn') {
@@ -85,7 +83,6 @@ export default class Map1 extends PIXI.Container {
 								player.position.set(object.x, object.y);
 								engine.state.addChild(player);
 								engine.state.setFocus(player);
-								console.log('add player', player);
 							}
 						}
 					});

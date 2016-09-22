@@ -160,6 +160,9 @@ export default class Player extends Entity {
 		this.sprite.position.y = -5;
 		this.left = keyboard(keyCode.left);
 		this.right = keyboard(keyCode.right);
+		this.shift = keyboard(keyCode.shift);
+		this.shift.press = () => this.maxVX = 9.0;
+		this.shift.release = () => this.maxVX = 6.0;
 		keyboard(keyCode.space).press = () => this.jump();
 		keyboard(keyCode.enter).press = () => this.hurt(10);
 
@@ -239,6 +242,7 @@ export default class Player extends Entity {
 			this.dir = 1;
 		}
 
+
 		if (!this.left.isDown && !this.right.isDown) {
 			this.vx *= .4;
 			if (Math.abs(this.vx) < 0.1) {
@@ -246,12 +250,19 @@ export default class Player extends Entity {
 			}
 		}
 
-		this.vx = clamp(this.vx, -this.maxVX, this.maxVX);
+
+		if (Math.abs(this.vx) > this.maxVX) {
+			this.vx *= .9;
+		}
 		this.vy += this.gravity * delta.deltaScale;
 
 		this.checkCollisionAndMove();
 
 		this.inAir = Math.abs(this.vy) > 0.01;
+
+		// update run animation speed depending on horizontal velocity
+		this.runAnimation.fps = (Math.abs(this.vx) / this.maxVX) * (this.maxVX * 2.5);
+		this.runAnimationFlipped.fps = (Math.abs(this.vx) / this.maxVX) * (this.maxVX * 2.5);
 
 		this.bounds.x = this.x;
 		this.bounds.y = this.y;

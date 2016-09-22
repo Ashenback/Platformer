@@ -41,6 +41,13 @@ const esc = 27;
 const tab = 9;
 const enter = 13;
 const space = 32;
+const shift = 16;
+const control = 17;
+const caps = 20;
+const home = 36;
+const end = 35;
+const pgup = 33;
+const pgdn = 34;
 const up = 38;
 const down = 40;
 const left = 37;
@@ -114,6 +121,7 @@ const f15 = 126;
 
 export {
 	esc, tab, enter, space, up, down, left, right,
+	shift, control, caps, home, end, pgup, pgdn,
 	a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z,
 	zero, one, two, three, four, five, six, seven, eight, nine,
 	numZero, numOne, numTwo, numThree, numFour, numFive, numSix, numSeven, numEight, numNine,
