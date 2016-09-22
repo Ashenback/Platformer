@@ -1,4 +1,6 @@
+import Collidable from 'core/Collidable';
 import Entity from './Entity';
+import engine from 'core/Engine';
 
 export default class Platform extends Entity {
 	constructor(x, y, width, height) {
@@ -8,6 +10,8 @@ export default class Platform extends Entity {
 		this.width = width;
 		this.height = height;
 		this.bounds = new PIXI.Rectangle(this.x, this.y, width, height);
+		this.collidable = new Collidable(this, this.bounds, ['platform']);
+		engine.state.collidables.push(this.collidable);
 		this.setTag('platform');
 		this.moving = false;
 		this.gfx = new PIXI.Graphics();

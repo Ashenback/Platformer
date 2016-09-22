@@ -1,4 +1,5 @@
 export default {
+	assetsRoot: 'assets/',
 	scale: 2.0,
 	get width() { return 800 / this.scale },
 	get height() { return 600 / this.scale },

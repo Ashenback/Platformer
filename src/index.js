@@ -31,16 +31,9 @@ PIXI.loader
 	.add('player_run', 'assets/player_run.png')
 	.add('player_run_flipped', 'assets/player_run_flipped.png')
 	.on('progress', loadProgressHandler)
-	.after((resource, next) => {
-		resource.texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-		next();
-	})
 	.load(setup);
 
-function setup(loader, resources) {
-	Object.keys(resources).forEach(key => {
-		resources[key].texture.baseTexture.scaleMode = PIXI.SCALE_MODES.NEAREST;
-	});
+function setup() {
 	const play = new Play(engine);
 	const pause = new Pause(engine);
 

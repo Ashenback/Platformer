@@ -4,6 +4,7 @@ import { clamp } from 'util/math';
 import Entity from './Entity';
 import Animation from '../core/Animation';
 import engine from 'core/Engine';
+import Collidable from 'core/Collidable';
 import { hitTestRectangle } from 'util/collision';
 
 export default class Player extends Entity {
@@ -151,8 +152,10 @@ export default class Player extends Entity {
 		this.jumpTime = 0.0;
 		this.airTime = 0.0;
 		this.x = 50;
-		this.y = -100;
+		this.y = 0;
 		this.bounds = new PIXI.Rectangle(this.x, this.y, 26, 40);
+		this.collidable = new Collidable(this, this.bounds, ['player']);
+		engine.state.collidables.push(this.collidable);
 		this.sprite.position.x = -5;
 		this.sprite.position.y = -5;
 		this.left = keyboard(keyCode.left);
@@ -340,20 +343,20 @@ export default class Player extends Entity {
 		this.updateHitBoxes({x: nextX, y: nextY});
 		//const hitRect = new PIXI.Rectangle(this.x, this.y, nextX + this.bounds.width, nextY + this.bounds.height);
 		const hitRect = new PIXI.Rectangle(nextX, nextY, this.bounds.width, this.bounds.height);
-		engine.state.children.forEach(child => {
-			if (child && child.hasTag && child.hasTag('platform')) {
-				if (hitTestRectangle(hitRect, child.bounds)) {
-					const hitLeft = hitTestRectangle(this.hitLeft, child.bounds);
-					const hitRight = hitTestRectangle(this.hitRight, child.bounds);
-					const hitUp = hitTestRectangle(this.hitUp, child.bounds);
-					const hitDown = hitTestRectangle(this.hitDown, child.bounds);
+		engine.state.collidables.forEach(collidable => {
+			if (collidable.hasTag('platform')) {
+				if (hitTestRectangle(hitRect, collidable.bounds)) {
+					const hitLeft = hitTestRectangle(this.hitLeft, collidable.bounds);
+					const hitRight = hitTestRectangle(this.hitRight, collidable.bounds);
+					const hitUp = hitTestRectangle(this.hitUp, collidable.bounds);
+					const hitDown = hitTestRectangle(this.hitDown, collidable.bounds);
 
 					if (hitLeft && hitRight && hitDown) {
 						this.vy = 0;
 						this.isJumping = false;
 						this.hitDown.y -= step;
 						nextY -= step;
-						while(hitTestRectangle(this.hitDown, child.bounds)) {
+						while(hitTestRectangle(this.hitDown, collidable.bounds)) {
 							this.hitDown.y -= step;
 							nextY -= step;
 						}
@@ -361,7 +364,7 @@ export default class Player extends Entity {
 						this.vy = 0;
 						this.hitUp.y += step;
 						nextY += step;
-						while(hitTestRectangle(this.hitUp, child.bounds)) {
+						while(hitTestRectangle(this.hitUp, collidable.bounds)) {
 							this.hitUp.y += step;
 							nextY += step;
 						}
@@ -369,7 +372,7 @@ export default class Player extends Entity {
 						this.vx = 0;
 						this.hitLeft.x += step;
 						nextX += step;
-						while(hitTestRectangle(this.hitLeft, child.bounds)) {
+						while(hitTestRectangle(this.hitLeft, collidable.bounds)) {
 							this.hitLeft.x += step;
 							nextX += step;
 						}
@@ -377,44 +380,44 @@ export default class Player extends Entity {
 						this.vx = 0;
 						this.hitRight.x -= step;
 						nextX -= step;
-						while(hitTestRectangle(this.hitRight, child.bounds)) {
+						while(hitTestRectangle(this.hitRight, collidable.bounds)) {
 							this.hitRight.x -= step;
 							nextX -= step;
 						}
 					} else {
-						if (hitTestRectangle(this.hitLeft, child.bounds)) {
+						if (hitTestRectangle(this.hitLeft, collidable.bounds)) {
 							this.vx = 0;
 							this.hitLeft.x += step;
 							nextX += step;
-							while(hitTestRectangle(this.hitLeft, child.bounds)) {
+							while(hitTestRectangle(this.hitLeft, collidable.bounds)) {
 								this.hitLeft.x += step;
 								nextX += step;
 							}
 						}
-						if (hitTestRectangle(this.hitRight, child.bounds)) {
+						if (hitTestRectangle(this.hitRight, collidable.bounds)) {
 							this.vx = 0;
 							this.hitRight.x -= step;
 							nextX -= step;
-							while(hitTestRectangle(this.hitRight, child.bounds)) {
+							while(hitTestRectangle(this.hitRight, collidable.bounds)) {
 								this.hitRight.x -= step;
 								nextX -= step;
 							}
 						}
-						if (hitTestRectangle(this.hitUp, child.bounds)) {
+						if (hitTestRectangle(this.hitUp, collidable.bounds)) {
 							this.vy = 0;
 							this.hitUp.y += step;
 							nextY += step;
-							while(hitTestRectangle(this.hitUp, child.bounds)) {
+							while(hitTestRectangle(this.hitUp, collidable.bounds)) {
 								this.hitUp.y += step;
 								nextY += step;
 							}
 						}
-						if (hitTestRectangle(this.hitDown, child.bounds)) {
+						if (hitTestRectangle(this.hitDown, collidable.bounds)) {
 							this.vy = 0;
 							this.isJumping = false;
 							this.hitDown.y -= step;
 							nextY -= step;
-							while(hitTestRectangle(this.hitDown, child.bounds)) {
+							while(hitTestRectangle(this.hitDown, collidable.bounds)) {
 								this.hitDown.y -= step;
 								nextY -= step;
 							}

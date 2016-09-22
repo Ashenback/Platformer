@@ -10,8 +10,8 @@ class Engine {
 	changeState(newState) {
 		if (newState) {
 			const oldState = this.state;
-			newState.stateMount();
 			this.state = newState;
+			newState.stateMount();
 			if (oldState) {
 				oldState.stateUnmount();
 			}
