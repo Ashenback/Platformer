@@ -1,5 +1,5 @@
 import config from 'util/config';
-import Collidable from 'core/Collidable';
+import Bounds from 'core/Bounds';
 import engine from 'core/Engine';
 import Player from "entity/Player";
 import Platform from "entity/Platform";
@@ -62,18 +62,13 @@ export default class Map1 extends PIXI.Container {
 				console.log('object group', layer.objects);
 				if (layer.name === 'collision') {
 					layer.objects.forEach(object => {
-						const collidable = new Collidable(
-							object,
-							new PIXI.Rectangle(
-								object.x,
-								object.y,
-								object.width,
-								object.height
-							),
-							['platform', 'tile']
+						const platform = new Platform(
+							object.x,
+							object.y,
+							object.width,
+							object.height
 						);
-						//console.log('add collision', object.name, collidable.bounds);
-						engine.state.collidables.push(collidable);
+						engine.state.addChild(platform);
 					});
 				} else if (layer.name === 'triggers') {
 					layer.objects.forEach(object => {

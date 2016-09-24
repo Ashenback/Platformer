@@ -1,11 +1,13 @@
+import config from 'util/config';
+
 export default class State extends PIXI.Container {
 	name;
 	focus;
 
-	constructor(name, engine) {
+	constructor(name) {
 		super();
 		this.name = name;
-		this.engine = engine;
+		this.scale = new PIXI.Point(config.scale, config.scale);
 	}
 
 	getEntitiesByTag(tag) {

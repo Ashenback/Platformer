@@ -1,4 +1,4 @@
-import Collidable from 'core/Collidable';
+import Bounds from 'core/Bounds';
 import Entity from './Entity';
 import engine from 'core/Engine';
 
@@ -9,9 +9,8 @@ export default class Platform extends Entity {
 		this.y = y;
 		this.width = width;
 		this.height = height;
-		this.bounds = new PIXI.Rectangle(this.x, this.y, width, height);
-		this.collidable = new Collidable(this, this.bounds, ['platform']);
-		engine.state.collidables.push(this.collidable);
+		this.bounds = new Bounds(this.x, this.y, width, height);
+		engine.state.collidables.push(this);
 		this.setTag('platform');
 		this.moving = false;
 		this.gfx = new PIXI.Graphics();
@@ -19,7 +18,7 @@ export default class Platform extends Entity {
 		this.gfx.lineStyle(2, 0xff7f00, 1);
 		this.gfx.drawRect(0, 0, width, height);
 		this.gfx.endFill();
-		this.addChild(this.gfx);
+		//this.addChild(this.gfx);
 	}
 
 	setMoving(vector, interval = 1000) {

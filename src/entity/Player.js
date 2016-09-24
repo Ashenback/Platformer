@@ -1,11 +1,10 @@
 import keyboard, * as keyCode from 'util/keyboard';
 import config from 'util/config';
-import { clamp } from 'util/math';
 import Entity from './Entity';
 import Animation from '../core/Animation';
 import engine from 'core/Engine';
-import Collidable from 'core/Collidable';
-import { hitTestRectangle } from 'util/collision';
+import Bounds from 'core/Bounds';
+import { hitTestBounds } from 'util/collision';
 
 export default class Player extends Entity {
 	constructor() {
@@ -125,17 +124,27 @@ export default class Player extends Entity {
 
 		this.currentAnimation = this.idleAnimation;
 		this.sprite = new PIXI.Sprite(this.currentAnimation.texture);
-
 		this.label = new PIXI.Text(
-			'Player',
+			'Silver Fox',
 			{
 				fontSize: `12px`,
-				fontFamily: config.font,
+				fontFamily: config.fontFamily,
 				fill: 'white',
 				stroke: 0xffc0c0,
 				strokeThickness: 1
 			}
 		);
+/*
+		this.label = new PIXI.extras.BitmapText(
+			'Silver',
+			{
+				font: {
+					name: config.fontFamily,
+					size: 14
+				},
+			}
+		);
+*/
 		this.label.y = -this.label.height - 5.0;
 		this.label.x = -(this.label.width / 2);
 		this.acceleration = 15.0;
@@ -153,15 +162,14 @@ export default class Player extends Entity {
 		this.airTime = 0.0;
 		this.x = 50;
 		this.y = 0;
-		this.bounds = new PIXI.Rectangle(this.x, this.y, 26, 40);
-		this.collidable = new Collidable(this, this.bounds, ['player']);
-		engine.state.collidables.push(this.collidable);
+		this.bounds = new Bounds(this.x, this.y, 26, 40);
+		engine.state.collidables.push(this);
 		this.sprite.position.x = -5;
 		this.sprite.position.y = -5;
 		this.left = keyboard(keyCode.left);
 		this.right = keyboard(keyCode.right);
 		this.shift = keyboard(keyCode.shift);
-		this.shift.press = () => this.maxVX = 9.0;
+		this.shift.press = () => this.maxVX = 19.0;
 		this.shift.release = () => this.maxVX = 6.0;
 		keyboard(keyCode.space).press = () => this.jump();
 		keyboard(keyCode.enter).press = () => this.hurt(10);
@@ -267,7 +275,7 @@ export default class Player extends Entity {
 		this.bounds.x = this.x;
 		this.bounds.y = this.y;
 
-		this.label.text = `${this.x.toFixed(1)}, ${this.y.toFixed(1)}|${this.vx.toFixed(1)}, ${this.vy.toFixed(1)} : J ${this.isJumping ? 'Y' : 'N'} : A ${this.inAir ? 'Y' : 'N'}`;
+		// this.label.text = `${this.x.toFixed(1)}, ${this.y.toFixed(1)}|${this.vx.toFixed(1)}, ${this.vy.toFixed(1)} : J ${this.isJumping ? 'Y' : 'N'} : A ${this.inAir ? 'Y' : 'N'}`;
 		this.label.x = -(this.label.width / 2) + (this.sprite.width / 2);
 	}
 
@@ -292,7 +300,6 @@ export default class Player extends Entity {
 	}
 
 	fixedUpdate(delta) {
-		this.hitGraphics.clear();
 		this.renderHitBoxes();
 
 		// update animation
@@ -335,6 +342,7 @@ export default class Player extends Entity {
 	}
 
 	renderHitBoxes() {
+		this.hitGraphics.clear();
 		if (engine.state.debug) {
 			this.hitGraphics.lineStyle(2, 0x00ff00, 1);
 			this.hitBoxes.forEach(hitBox => {
@@ -348,6 +356,80 @@ export default class Player extends Entity {
 	}
 
 	checkCollisionAndMove() {
+		let nextX = this.x + this.vx;
+		let nextY = this.y + this.vy;
+		const hitRect = new Bounds(nextX, nextY, this.bounds.width, this.bounds.height);
+		const pMidX = hitRect.midX;
+		const pMidY = hitRect.midY;
+		engine.state.children.forEach(entity => {
+			if (entity.hasTag && entity.hasTag('platform')) {
+				if (hitTestBounds(hitRect, entity.bounds)) {
+					const cMidX = entity.bounds.midX;
+					const cMidY = entity.bounds.midY;
+					const dx = (cMidX - pMidX) / (entity.bounds.halfWidth);
+					const dy = (cMidY - pMidY) / (entity.bounds.halfHeight);
+
+					const absDX = Math.abs(dx);
+					const absDY = Math.abs(dy);
+
+					if (Math.abs(absDX - absDY) < 0.2) {
+						// Corner collision
+						if (dx < 0) {
+							nextX = entity.bounds.right;
+						} else {
+							nextX = entity.bounds.left - this.bounds.width;
+						}
+
+						if (dy < 0) {
+							nextY = entity.bounds.bottom;
+						} else {
+							nextY = entity.bounds.top - this.bounds.height;
+						}
+						this.isJumping = false;
+
+						if (Math.random() < .5) {
+							this.vx = -this.vx * entity.restitution;
+							if (Math.abs(this.vx) < 0.004) {
+								this.vx = 0;
+							}
+						} else {
+							this.vy = -this.vy * entity.restitution;
+							if (Math.abs(this.vy) < 0.004) {
+								this.vy = 0;
+							}
+						}
+					} else if (absDX > absDY) {
+						// horizontal collision
+						if (dx < 0) {
+							nextX = entity.bounds.right;
+						} else {
+							nextX = entity.bounds.left - this.bounds.width;
+						}
+						this.vx = -this.vx * entity.restitution;
+						if (Math.abs(this.vx) < 0.004) {
+							this.vx = 0;
+						}
+					} else {
+						// vertical collision
+						if (dy < 0) {
+							nextY = entity.bounds.bottom;
+						} else {
+							nextY = entity.bounds.top - this.bounds.height;
+						}
+						this.isJumping = false;
+						this.vy = -this.vy * entity.restitution;
+						if (Math.abs(this.vy) < 0.004) {
+							this.vy = 0;
+						}
+					}
+				}
+			}
+		});
+		this.x = nextX;
+		this.y = nextY;
+	}
+/*
+	checkCollisionAndMove_() {
 		const step = 0.1;
 		let nextX = this.x + this.vx;
 		let nextY = this.y + this.vy;
@@ -356,7 +438,7 @@ export default class Player extends Entity {
 		const hitRect = new PIXI.Rectangle(nextX, nextY, this.bounds.width, this.bounds.height);
 		engine.state.collidables.forEach(collidable => {
 			if (collidable.hasTag('platform')) {
-				if (hitTestRectangle(hitRect, collidable.bounds)) {
+				if (hitTestBounds(hitRect, collidable.bounds)) {
 					const hitLeft = hitTestRectangle(this.hitLeft, collidable.bounds);
 					const hitRight = hitTestRectangle(this.hitRight, collidable.bounds);
 					const hitUp = hitTestRectangle(this.hitUp, collidable.bounds);
@@ -440,4 +522,5 @@ export default class Player extends Entity {
 		this.x = nextX;
 		this.y = nextY;
 	}
+*/
 }
