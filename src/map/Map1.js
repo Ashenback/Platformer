@@ -1,8 +1,8 @@
 import config from 'util/config';
-import Bounds from 'core/Bounds';
 import engine from 'core/Engine';
 import Player from "entity/Player";
 import Platform from "entity/Platform";
+import Polygon from "entity/Polygon";
 
 export default class Map1 extends PIXI.Container {
 	loaded = false;
@@ -62,20 +62,33 @@ export default class Map1 extends PIXI.Container {
 				console.log('object group', layer.objects);
 				if (layer.name === 'collision') {
 					layer.objects.forEach(object => {
-						const platform = new Platform(
-							object.x,
-							object.y,
-							object.width,
-							object.height
-						);
-						engine.state.addChild(platform);
+						let entity;
+						if (object.polygon) {
+							entity = new Polygon(
+								object.x,
+								object.y,
+								object.polygon
+							)
+						} else {
+							entity = new Platform(
+								object.x,
+								object.y,
+								object.width,
+								object.height
+							);
+						}
+						if (entity) {
+							console.log('add collision entity', entity);
+							engine.state.addChild(entity);
+						}
 					});
 				} else if (layer.name === 'triggers') {
 					layer.objects.forEach(object => {
 						if (object.type === 'spawn') {
 							if (object.name === 'player') {
 								const player = new Player();
-								player.position.set(object.x, object.y);
+								player.bounds.x = object.x + (object.width - player.bounds.width) / 2;
+								player.bounds.y = object.y + object.height - player.bounds.height;
 								engine.state.addChild(player);
 								engine.state.setFocus(player);
 							}

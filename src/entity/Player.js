@@ -15,6 +15,7 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(0, 0, 36, 45)
 			],
 			{
+				name: 'Player Landing',
 				type: 'linear'
 			}
 		);
@@ -32,7 +33,10 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(252, 0, 36, 45),
 				new PIXI.Rectangle(288, 0, 36, 45),
 				new PIXI.Rectangle(324, 0, 36, 45)
-			]
+			],
+			{
+				name: 'Player Run'
+			}
 		);
 
 		this.runAnimationFlipped = new Animation(
@@ -48,7 +52,10 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(252, 0, 36, 45),
 				new PIXI.Rectangle(288, 0, 36, 45),
 				new PIXI.Rectangle(324, 0, 36, 45)
-			]
+			],
+			{
+				name: 'Player Run Flipped'
+			}
 		);
 
 		this.jumpAnimation = new Animation(
@@ -58,6 +65,7 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(36, 0, 36, 45)
 			],
 			{
+				name: 'Player Jump',
 				type: 'linear'
 			}
 		);
@@ -69,6 +77,7 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(36, 0, 36, 45)
 			],
 			{
+				name: 'Player Jump Flipped',
 				type: 'linear'
 			}
 		);
@@ -79,6 +88,7 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(0, 0, 36, 45)
 			],
 			{
+				name: 'Player Air',
 				type: 'linear'
 			}
 		);
@@ -89,6 +99,7 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(0, 0, 36, 45)
 			],
 			{
+				name: 'Player Air Flipped',
 				type: 'linear'
 			}
 		);
@@ -104,6 +115,7 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(180, 0, 36, 45)
 			],
 			{
+				name: 'Player Idle',
 				fps: 8.0
 			}
 		);
@@ -118,6 +130,7 @@ export default class Player extends Entity {
 				new PIXI.Rectangle(144, 0, 36, 45)
 			],
 			{
+				name: 'Player Idle Flipped',
 				fps: 8.0
 			}
 		);
@@ -158,14 +171,13 @@ export default class Player extends Entity {
 		this.maxHp = 100;
 		this.inAir = false;
 		this.isJumping = false;
+		this.isGrounded = false;
 		this.jumpTime = 0.0;
 		this.airTime = 0.0;
-		this.x = 50;
-		this.y = 0;
-		this.bounds = new Bounds(this.x, this.y, 26, 40);
+		this.bounds = new Bounds(0, 0, 16, 32);
 		engine.state.collidables.push(this);
-		this.sprite.position.x = -5;
-		this.sprite.position.y = -5;
+		this.sprite.position.x = (this.bounds.width - this.sprite.width) / 2;
+		this.sprite.position.y = this.bounds.height - this.sprite.height;
 		this.left = keyboard(keyCode.left);
 		this.right = keyboard(keyCode.right);
 		this.shift = keyboard(keyCode.shift);
@@ -221,6 +233,7 @@ export default class Player extends Entity {
 		if (!this.isJumping && !this.inAir) {
 			this.vy -= this.jumpPower;
 			this.isJumping = true;
+			this.isGrounded = false;
 		}
 	}
 
@@ -258,7 +271,6 @@ export default class Player extends Entity {
 			}
 		}
 
-
 		if (Math.abs(this.vx) > this.maxVX) {
 			this.vx *= .9;
 		}
@@ -266,14 +278,14 @@ export default class Player extends Entity {
 
 		this.checkCollisionAndMove();
 
-		this.inAir = Math.abs(this.vy) > 0.01;
+		this.inAir = Math.abs(this.vy) > 0.01 && !this.isGrounded;
 
 		// update run animation speed depending on horizontal velocity
-		this.runAnimation.fps = (Math.abs(this.vx) / this.maxVX) * (this.maxVX * 2.5);
-		this.runAnimationFlipped.fps = (Math.abs(this.vx) / this.maxVX) * (this.maxVX * 2.5);
+		this.runAnimation.fps = (Math.abs(this.vx) / this.maxVX) * (this.maxVX * 2.8);
+		this.runAnimationFlipped.fps = (Math.abs(this.vx) / this.maxVX) * (this.maxVX * 2.8);
 
-		this.bounds.x = this.x;
-		this.bounds.y = this.y;
+		this.x = this.bounds.x;
+		this.y = this.bounds.y;
 
 		// this.label.text = `${this.x.toFixed(1)}, ${this.y.toFixed(1)}|${this.vx.toFixed(1)}, ${this.vy.toFixed(1)} : J ${this.isJumping ? 'Y' : 'N'} : A ${this.inAir ? 'Y' : 'N'}`;
 		this.label.x = -(this.label.width / 2) + (this.sprite.width / 2);
@@ -292,6 +304,7 @@ export default class Player extends Entity {
 
 	changeAnimation(animation) {
 		if (this.currentAnimation !== animation) {
+			console.log('change animation', animation.name);
 			this.currentAnimation.stop();
 			this.currentAnimation = animation;
 			this.currentAnimation.play();
@@ -300,24 +313,24 @@ export default class Player extends Entity {
 	}
 
 	fixedUpdate(delta) {
-		this.renderHitBoxes();
+		//this.renderHitBoxes();
 
 		// update animation
 		if (this.isJumping) {
 			if (this.vy < 0) {
 				if (this.dir < 0) {
-					this.changeAnimation(this.airAnimation);
-				} else {
-					this.changeAnimation(this.airAnimationFlipped);
-				}
-			} else {
-				if (this.dir < 0) {
 					this.changeAnimation(this.jumpAnimation);
 				} else {
 					this.changeAnimation(this.jumpAnimationFlipped);
 				}
+			} else {
+				if (this.dir < 0) {
+					this.changeAnimation(this.airAnimation);
+				} else {
+					this.changeAnimation(this.airAnimationFlipped);
+				}
 			}
-		} else if (this.vy > 0) {
+		} else if (this.inAir) {
 			if (this.dir < 0) {
 				this.changeAnimation(this.airAnimation);
 			} else {
@@ -355,6 +368,109 @@ export default class Player extends Entity {
 		}
 	}
 
+	checkCollisionAndMove() {
+		let nextX = this.bounds.x + this.vx;
+		let nextY = this.bounds.y + this.vy;
+		const stepX = Math.sign(this.vx);
+		const stepY = Math.sign(this.vy);
+		const diffX = Math.abs(nextX - this.bounds.x);
+		const diffY = Math.abs(nextY - this.bounds.y);
+		for (let x = 0; x < diffX; x++) {
+			this.bounds.x += stepX;
+			let hit = false;
+			for (let i = 0; i < engine.state.children.length; i++) {
+				const entity = engine.state.children[i];
+				if (entity.hasTag && entity.hasTag('platform')) {
+					if (hitTestBounds(this.bounds, entity.bounds)) {
+						// do pixel collision here
+						hit = entity;
+						break;
+					}
+				}
+			}
+			if (hit) {
+				// revert colliding step
+				this.bounds.x -= stepX;
+				this.vx = -this.vx * hit.restitution;
+				if (Math.abs(this.vx) < 0.004) {
+					this.vx = 0;
+				}
+				break;
+			}
+		}
+		for (let y = 0; y < diffY; y++) {
+			this.bounds.y += stepY;
+			let hit = false;
+			for (let i = 0; i < engine.state.children.length; i++) {
+				const entity = engine.state.children[i];
+				if (entity.hasTag && entity.hasTag('platform')) {
+					if (hitTestBounds(this.bounds, entity.bounds)) {
+						// do pixel collision here
+						hit = entity;
+						break;
+					}
+				}
+			}
+			if (hit) {
+				// revert colliding step
+				this.bounds.y -= stepY;
+				this.isJumping = false;
+				if (this.vy > 0) {
+					this.isGrounded = true;
+				}
+				this.vy = -this.vy * hit.restitution;
+				if (Math.abs(this.vy) < 0.004) {
+					this.vy = 0;
+				}
+				break;
+			}
+		}
+	}
+
+/*
+	checkCollisionAndMove() {
+		let nextX = this.x + this.vx;
+		let nextY = this.y + this.vy;
+		const hitRect = new SAT.Box(new SAT.Vector(nextX, nextY), this.bounds.width, this.bounds.height).toPolygon();
+		const response = new SAT.Response();
+		engine.state.children.forEach(entity => {
+			if (entity.hasTag && (entity.hasTag('platform') || entity.hasTag('polygon'))) {
+				response.clear();
+				let entityRect;
+				if (entity.hasTag('platform')) {
+					entityRect = new SAT.Box(
+						new SAT.Vector(entity.bounds.x, entity.bounds.y),
+						entity.bounds.width,
+						entity.bounds.height
+					).toPolygon();
+				} else {
+					entityRect = entity.bounds;
+				}
+				if (SAT.testPolygonPolygon(hitRect, entityRect, response)) {
+					nextX -= response.overlapV.x;
+					nextY -= response.overlapV.y;
+					if (Math.abs(response.overlapV.x) > 0 && Math.abs(response.overlapV.y) > 0) {
+						this.vx *= 0.9;
+						this.vy *= 0.9;
+						this.isJumping = false;
+						this.isGrounded = false;
+					} else {
+						if (Math.abs(response.overlapV.x) > 0) {
+							this.vx = 0;
+						}
+						if (Math.abs(response.overlapV.y) > 0) {
+							this.vy = 0;
+							this.isJumping = false;
+						}
+					}
+				}
+			}
+		});
+		this.x = nextX;
+		this.y = nextY;
+	}
+*/
+/*
 	checkCollisionAndMove() {
 		let nextX = this.x + this.vx;
 		let nextY = this.y + this.vy;
@@ -428,8 +544,9 @@ export default class Player extends Entity {
 		this.x = nextX;
 		this.y = nextY;
 	}
+*/
 /*
-	checkCollisionAndMove_() {
+	checkCollisionAndMove() {
 		const step = 0.1;
 		let nextX = this.x + this.vx;
 		let nextY = this.y + this.vy;

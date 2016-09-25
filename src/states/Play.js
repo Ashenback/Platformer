@@ -17,11 +17,30 @@ export default class Play extends State {
 		this.physicsGraphics.lineStyle(2, 0xff0000, .5);
 		this.children.forEach(child => {
 			if (child && child.bounds) {
-				this.physicsGraphics.moveTo(child.bounds.x, child.bounds.y);
-				this.physicsGraphics.lineTo(child.bounds.x + child.bounds.width, child.bounds.y);
-				this.physicsGraphics.lineTo(child.bounds.x + child.bounds.width, child.bounds.y + child.bounds.height);
-				this.physicsGraphics.lineTo(child.bounds.x, child.bounds.y + child.bounds.height);
-				this.physicsGraphics.lineTo(child.bounds.x, child.bounds.y);
+				if (child.hasTag('polygon')) {
+					this.physicsGraphics.moveTo(
+						child.bounds.pos.x + child.bounds.points[0].x,
+						child.bounds.pos.y + child.bounds.points[0].y
+					);
+					child.bounds.points.forEach((point, index) => {
+						if (index > 0) {
+							this.physicsGraphics.lineTo(
+								child.bounds.pos.x + point.x,
+								child.bounds.pos.y + point.y
+							);
+						}
+					});
+					this.physicsGraphics.lineTo(
+						child.bounds.pos.x + child.bounds.points[0].x,
+						child.bounds.pos.y + child.bounds.points[0].y
+					);
+				} else {
+					this.physicsGraphics.moveTo(child.bounds.x, child.bounds.y);
+					this.physicsGraphics.lineTo(child.bounds.x + child.bounds.width, child.bounds.y);
+					this.physicsGraphics.lineTo(child.bounds.x + child.bounds.width, child.bounds.y + child.bounds.height);
+					this.physicsGraphics.lineTo(child.bounds.x, child.bounds.y + child.bounds.height);
+					this.physicsGraphics.lineTo(child.bounds.x, child.bounds.y);
+				}
 			}
 		});
 	}

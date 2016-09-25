@@ -9,6 +9,7 @@ export default class Animation {
 	type = 'loop';
 	dir = 1;
 	paused = false;
+	name;
 
 	constructor(texture, frames, options = {}) {
 		this.texture = texture;
@@ -16,6 +17,7 @@ export default class Animation {
 		this.texture.frame = this.frames[0];
 		this.type = options.type || 'loop';
 		this.fps = options.fps || 16.0;
+		this.name = options.name || 'Unnamed animation';
 	}
 
 	pause() {
