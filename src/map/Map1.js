@@ -33,9 +33,19 @@ export default class Map1 extends PIXI.Container {
 		this.height = this.mapData.height;
 		this.tileSet = this.mapData.tilesets[0];
 		const baseTexture = resources[this.tileSet.name].texture;
+		const canvas = document.createElement('canvas');
+		canvas.width = this.tileSet.imagewidth;
+		canvas.height = this.tileSet.imageheight;
+		const context = canvas.getContext('2d');
+		context.drawImage(
+			baseTexture.baseTexture.source,
+			0,
+			0,
+			this.tileSet.imagewidth,
+			this.tileSet.imageheight
+		);
 
 		console.log('tileSet', this.tileSet);
-
 		this.mapData.layers.forEach(layer => {
 			console.log('layer', layer.name, layer.type);
 			if (layer.type === 'tilelayer') {
@@ -43,24 +53,37 @@ export default class Map1 extends PIXI.Container {
 					layer.data.forEach((tileId, index) => {
 						if (tileId > 0) {
 							const zIndexId = tileId - 1;
-							const texture = new PIXI.Texture(baseTexture, new PIXI.Rectangle(
-								Math.floor(zIndexId % this.tileSet.columns) * this.tileSet.tilewidth,
-								Math.floor(zIndexId / this.tileSet.columns) * this.tileSet.tileheight,
-								this.tileSet.tilewidth,
-								this.tileSet.tileheight,
-							));
-							const tileSprite = new PIXI.Sprite(texture);
-							tileSprite.position.set(
-								Math.floor(index % this.mapData.width) * this.tileSet.tilewidth,
-								Math.floor(index / this.mapData.height) * this.tileSet.tileheight
+							const texture = new PIXI.Texture(
+								baseTexture,
+								new PIXI.Rectangle(
+									Math.floor(zIndexId % this.tileSet.columns) * this.tileSet.tilewidth,
+									Math.floor(zIndexId / this.tileSet.columns) * this.tileSet.tileheight,
+									this.tileSet.tilewidth,
+									this.tileSet.tileheight
+								)
 							);
-							this.addChild(tileSprite);
+							const tileSprite = new PIXI.Sprite(texture);
+							const entity = new Platform(
+								Math.floor(index % this.mapData.width) * this.tileSet.tilewidth,
+								Math.floor(index / this.mapData.height) * this.tileSet.tileheight,
+								this.tileSet.tilewidth,
+								this.tileSet.tileheight
+							);
+							entity.sprite = tileSprite;
+							entity.addChild(tileSprite);
+							entity.imageData = context.getImageData(
+								texture.frame.x,
+								texture.frame.y,
+								texture.frame.width,
+								texture.frame.height
+							).data;
+							engine.state.addChild(entity);
 						}
 					})
 				}
 			} else if (layer.type === 'objectgroup') {
 				console.log('object group', layer.objects);
-				if (layer.name === 'collision') {
+				if (layer.name === 'collision' && false) {
 					layer.objects.forEach(object => {
 						let entity;
 						if (object.polygon) {

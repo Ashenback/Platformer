@@ -144,7 +144,8 @@ export default class Player extends Entity {
 				fontFamily: config.fontFamily,
 				fill: 'white',
 				stroke: 0xffc0c0,
-				strokeThickness: 1
+				strokeThickness: 1,
+				letterSpacing: 1
 			}
 		);
 /*
@@ -158,15 +159,16 @@ export default class Player extends Entity {
 			}
 		);
 */
-		this.label.y = -this.label.height - 5.0;
+		this.label.y = -this.label.height - 10.0;
 		this.label.x = -(this.label.width / 2);
 		this.acceleration = 15.0;
-		this.jumpPower = 10.0;
+		this.jumpPower = 5.0;
 		this.gravity = 20.0;
 		this.vx = 0.0;
 		this.vy = 0.0;
 		this.dir = -1;
 		this.maxVX = 6.0;
+		this.maxVY = 10.0;
 		this.hp = 0;
 		this.maxHp = 100;
 		this.inAir = false;
@@ -183,7 +185,8 @@ export default class Player extends Entity {
 		this.shift = keyboard(keyCode.shift);
 		this.shift.press = () => this.maxVX = 19.0;
 		this.shift.release = () => this.maxVX = 6.0;
-		keyboard(keyCode.space).press = () => this.jump();
+		this.space = keyboard(keyCode.space);
+		//keyboard(keyCode.space).press = () => this.jump();
 		keyboard(keyCode.enter).press = () => this.hurt(10);
 
 		// debug stuff
@@ -263,6 +266,17 @@ export default class Player extends Entity {
 			this.dir = 1;
 		}
 
+		if (this.space.isDown && (!this.inAir || (this.isJumping && this.airTime < 98))) {
+			this.jumpTime += delta.deltaTime;
+			console.log('jumpTime', this.jumpTime);
+			this.vy -= this.jumpPower;
+			if (this.vy < -this.maxVY) {
+				this.vy = -this.maxVY;
+			}
+			this.isJumping = true;
+			this.isGrounded = false;
+			this.inAir = true;
+		}
 
 		if (!this.left.isDown && !this.right.isDown) {
 			this.vx *= .4;
@@ -272,13 +286,23 @@ export default class Player extends Entity {
 		}
 
 		if (Math.abs(this.vx) > this.maxVX) {
+			this.vx = this.maxVX * Math.sign(this.vx);
 			this.vx *= .9;
 		}
 		this.vy += this.gravity * delta.deltaScale;
-
+/*
+		if (Math.abs(this.vy) > this.maxVY) {
+			this.vy = this.maxVY * Math.sign(this.vy);
+			this.vy *= .9;
+		}
+*/
 		this.checkCollisionAndMove();
 
-		this.inAir = Math.abs(this.vy) > 0.01 && !this.isGrounded;
+		this.inAir = Math.abs(this.vy) > 0.01;
+
+		if (this.inAir) {
+			this.airTime += delta.deltaTime;
+		}
 
 		// update run animation speed depending on horizontal velocity
 		this.runAnimation.fps = (Math.abs(this.vx) / this.maxVX) * (this.maxVX * 2.8);
@@ -375,25 +399,66 @@ export default class Player extends Entity {
 		const stepY = Math.sign(this.vy);
 		const diffX = Math.abs(nextX - this.bounds.x);
 		const diffY = Math.abs(nextY - this.bounds.y);
+		const entities = [];
+		const left = Math.min(this.bounds.x, nextX);
+		const top = Math.min(this.bounds.y, nextY);
+		const right = Math.max(this.bounds.right, nextX + this.bounds.width);
+		const bottom = Math.max(this.bounds.bottom, nextY + this.bounds.height);
+		const hitRect = new Bounds(
+			left,
+			top,
+			right - left,
+			bottom - top
+		);
+		engine.state.children.forEach(entity => {
+			if (entity.hasTag && entity.hasTag('platform')) {
+				if (hitTestBounds(hitRect, entity.bounds)) {
+					entities.push(entity);
+				}
+			}
+		});
+		let computations = 0;
 		for (let x = 0; x < diffX; x++) {
 			this.bounds.x += stepX;
 			let hit = false;
-			for (let i = 0; i < engine.state.children.length; i++) {
-				const entity = engine.state.children[i];
+			let slope = false;
+			for (let i = 0; i < entities.length; i++) {
+				const entity = entities[i];
 				if (entity.hasTag && entity.hasTag('platform')) {
 					if (hitTestBounds(this.bounds, entity.bounds)) {
 						// do pixel collision here
-						hit = entity;
-						break;
+						const l = Math.max(this.bounds.left, entity.bounds.left) - entity.bounds.left;
+						const r = Math.min(this.bounds.right, entity.bounds.right) - entity.bounds.left;
+						const t = Math.max(this.bounds.top, entity.bounds.top) - entity.bounds.top;
+						const b = Math.min(this.bounds.bottom, entity.bounds.bottom) - entity.bounds.top;
+						const pixels = entity.imageData;
+						for (let py = t; py < b; py++) {
+							const yy = py * entity.sprite.width * 4;
+							for (let px = l; px < r; px++) {
+								const xx = px * 4;
+								const a = pixels[xx + yy + 3];
+								computations++;
+								if (a > 0) {
+									hit = entity;
+									if (r - l > 4) {
+										slope = true;
+									}
+									break;
+								}
+							}
+						}
 					}
 				}
 			}
 			if (hit) {
 				// revert colliding step
-				this.bounds.x -= stepX;
-				this.vx = -this.vx * hit.restitution;
-				if (Math.abs(this.vx) < 0.004) {
-					this.vx = 0;
+				//this.bounds.y -= 2;
+				if (!slope) {
+					this.bounds.x -= stepX;
+					this.vx = -this.vx * hit.restitution;
+					if (Math.abs(this.vx) < 0.004) {
+						this.vx = 0;
+					}
 				}
 				break;
 			}
@@ -401,22 +466,39 @@ export default class Player extends Entity {
 		for (let y = 0; y < diffY; y++) {
 			this.bounds.y += stepY;
 			let hit = false;
-			for (let i = 0; i < engine.state.children.length; i++) {
-				const entity = engine.state.children[i];
+			for (let i = 0; i < entities.length; i++) {
+				const entity = entities[i];
 				if (entity.hasTag && entity.hasTag('platform')) {
 					if (hitTestBounds(this.bounds, entity.bounds)) {
 						// do pixel collision here
-						hit = entity;
-						break;
+						const l = Math.max(this.bounds.left, entity.bounds.left) - entity.bounds.left;
+						const r = Math.min(this.bounds.right, entity.bounds.right) - entity.bounds.left;
+						const t = Math.max(this.bounds.top, entity.bounds.top) - entity.bounds.top;
+						const b = Math.min(this.bounds.bottom, entity.bounds.bottom) - entity.bounds.top;
+						const pixels = entity.imageData;
+						for (let py = t; py < b; py++) {
+							const yy = py * entity.sprite.width * 4;
+							for (let px = l; px < r; px++) {
+								const xx = px * 4;
+								const a = pixels[xx + yy + 3];
+								computations++;
+								if (a > 0) {
+									hit = entity;
+									break;
+								}
+							}
+						}
 					}
 				}
 			}
 			if (hit) {
 				// revert colliding step
 				this.bounds.y -= stepY;
-				this.isJumping = false;
 				if (this.vy > 0) {
+					this.isJumping = false;
 					this.isGrounded = true;
+					this.jumpTime = 0;
+					this.airTime = 0;
 				}
 				this.vy = -this.vy * hit.restitution;
 				if (Math.abs(this.vy) < 0.004) {
@@ -425,6 +507,7 @@ export default class Player extends Entity {
 				break;
 			}
 		}
+		//console.log('computations', computations);
 	}
 
 /*
