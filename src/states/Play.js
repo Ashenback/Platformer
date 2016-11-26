@@ -57,8 +57,8 @@ export default class Play extends State {
 			if (this.focus) {
 				const diffX = (-(this.focus.x * config.scale) + config.width / 2) - this.x;
 				const diffY = (-(this.focus.y * config.scale) + config.height / 2) - this.y;
-				this.x += diffX * 0.3;
-				this.y += diffY * 0.3;
+				this.x += diffX * 0.4;
+				this.y += diffY * 0.4;
 			}
 			if (this.debug) {
 				this.renderPhysics();

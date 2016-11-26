@@ -162,7 +162,7 @@ export default class Player extends Entity {
 		this.label.y = -this.label.height - 10.0;
 		this.label.x = -(this.label.width / 2);
 		this.acceleration = 15.0;
-		this.jumpPower = 5.0;
+		this.jumpPower = 2.0;
 		this.gravity = 20.0;
 		this.vx = 0.0;
 		this.vy = 0.0;
@@ -266,7 +266,7 @@ export default class Player extends Entity {
 			this.dir = 1;
 		}
 
-		if (this.space.isDown && (!this.inAir || (this.isJumping && this.airTime < 98))) {
+		if (this.space.isDown && this.jumpTime < 98) {
 			this.jumpTime += delta.deltaTime;
 			console.log('jumpTime', this.jumpTime);
 			this.vy -= this.jumpPower;
@@ -393,12 +393,11 @@ export default class Player extends Entity {
 	}
 
 	checkCollisionAndMove() {
-		let nextX = this.bounds.x + this.vx;
-		let nextY = this.bounds.y + this.vy;
+		const nextX = this.bounds.x + this.vx;
+		const nextY = this.bounds.y + this.vy;
 		const stepX = Math.sign(this.vx);
 		const stepY = Math.sign(this.vy);
 		const diffX = Math.abs(nextX - this.bounds.x);
-		const diffY = Math.abs(nextY - this.bounds.y);
 		const entities = [];
 		const left = Math.min(this.bounds.x, nextX);
 		const top = Math.min(this.bounds.y, nextY);
@@ -421,7 +420,7 @@ export default class Player extends Entity {
 		for (let x = 0; x < diffX; x++) {
 			this.bounds.x += stepX;
 			let hit = false;
-			let slope = false;
+			let tileFloorY = -1;
 			for (let i = 0; i < entities.length; i++) {
 				const entity = entities[i];
 				if (entity.hasTag && entity.hasTag('platform')) {
@@ -433,15 +432,16 @@ export default class Player extends Entity {
 						const b = Math.min(this.bounds.bottom, entity.bounds.bottom) - entity.bounds.top;
 						const pixels = entity.imageData;
 						for (let py = t; py < b; py++) {
-							const yy = py * entity.sprite.width * 4;
+							let yy = py * entity.sprite.width * 4;
 							for (let px = l; px < r; px++) {
-								const xx = px * 4;
-								const a = pixels[xx + yy + 3];
+								let xx = px * 4;
+								let a = pixels[xx + yy + 3];
 								computations++;
 								if (a > 0) {
 									hit = entity;
-									if (r - l > 4) {
-										slope = true;
+									if (entity.tileData) {
+										const t = px / entity.bounds.width;
+										tileFloorY = (1 - t) * entity.tileData.y0 + t * entity.tileData.y1;
 									}
 									break;
 								}
@@ -451,18 +451,20 @@ export default class Player extends Entity {
 				}
 			}
 			if (hit) {
-				// revert colliding step
-				//this.bounds.y -= 2;
-				if (!slope) {
+				if (tileFloorY >= 0) {
+					//console.log('tileFloorY', tileFloorY, hit);
+					this.bounds.y -= hit.bounds.height - tileFloorY;
+					this.vy = 0;
+				} else {
 					this.bounds.x -= stepX;
 					this.vx = -this.vx * hit.restitution;
 					if (Math.abs(this.vx) < 0.004) {
 						this.vx = 0;
 					}
 				}
-				break;
 			}
 		}
+		const diffY = Math.abs(nextY - this.bounds.y);
 		for (let y = 0; y < diffY; y++) {
 			this.bounds.y += stepY;
 			let hit = false;
@@ -504,9 +506,10 @@ export default class Player extends Entity {
 				if (Math.abs(this.vy) < 0.004) {
 					this.vy = 0;
 				}
-				break;
 			}
 		}
+		this.bounds.x = Math.round(this.bounds.x);
+		this.bounds.y = Math.round(this.bounds.y);
 		//console.log('computations', computations);
 	}
 

@@ -77,6 +77,9 @@ export default class Map1 extends PIXI.Container {
 								texture.frame.width,
 								texture.frame.height
 							).data;
+							if (this.tileSet.tileproperties[tileId]) {
+								entity.tileData = this.tileSet.tileproperties[tileId];
+							}
 							engine.state.addChild(entity);
 						}
 					})
